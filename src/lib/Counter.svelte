@@ -1,8 +1,17 @@
 <script lang="ts">
-  let count: number = 0
+  import { gun } from "../initGun.js"
+
+  let count = 0
   const increment = () => {
-    count += 1
+    update(count + 1)
   }
+
+  const update = (newcount: number) => gun.get("clickcount").put({totclicks: newcount})
+
+  gun.get("clickcount").map().on(function(data: any, key: string) {
+    count = data
+  })
+
 </script>
 
 <button on:click={increment}>

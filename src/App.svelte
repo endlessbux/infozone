@@ -1,23 +1,55 @@
 <script lang="ts">
   import logo from './assets/logo.svg'
   import Counter from './lib/Counter.svelte'
+  import { gun } from "./initGun.js"
+
+
+  interface Todo {
+    title: string;
+    done: boolean;
+  }
+
+  let input: string = ""
+  const create = () => gun.get("todos").get(input).put({title: input, done: false})
+  const update = (key: string, value: boolean) => gun.get("todos").get(key).get("done").put(value)
+  const remove = key => gun.get("todos").get(key).put(null)
+
+  let store: { [key: string]: Todo } = {}
+  gun.get("todos").map().on(function(data: Todo, key: string) {
+    if(data) {
+      store[key] = data
+    } else {
+      delete store[key]
+      store = store
+    }
+  })
+
+  // Sort the array by done status
+  $: todos =  Object.entries(store)
+                    .sort((
+                      a: [string, Todo], b: [string, Todo]) => 
+                        a[1].done == b[1].done ? 0 : 0 + Number(a[1].done) - Number(b[1].done)
+                    )
 </script>
 
 <main>
   <img src={logo} alt="Svelte Logo" />
   <h1>Welcome to InfoZone!</h1>
 
+  
   <Counter />
+  <hr>
+  <input placeholder="Add todo" bind:value={input}>
+  <button on:click={() => create() && (input = "")}>Add</button>
 
-  <p>
-    Visit <a href="https://svelte.dev">svelte.dev</a> to learn how to build Svelte
-    apps.
-  </p>
-
-  <p>
-    Check out <a href="https://github.com/sveltejs/kit#readme">SvelteKit</a> for
-    the officially supported framework, also powered by Vite!
-  </p>
+  <div>
+    {#each todos as [key, todo]}
+    <div id={key}>
+        <input type="checkbox" checked={todo.done} on:change={() => update(key, !todo.done)} >
+        {todo.title} <a href="/" on:click|preventDefault={() => remove(key)}>remove</a>
+    </div>
+    {/each}
+  </div>
 </main>
 
 <style>
